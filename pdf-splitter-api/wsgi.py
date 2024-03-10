@@ -9,10 +9,7 @@ app = Flask(__name__)
 
 DOWNLOADS_DIR = 'downloads'
 
-@app.route('/')
-def index():
-    return render_template('index.html')
- 
+
 @app.route('/api/preview', methods=['POST'])
 def preview_pdf():
     url = request.json.get('url')
@@ -58,6 +55,12 @@ def download_sliced_images(filename):
         abort(404)
 
     return send_file(filepath, as_attachment=True)
+
+
+@app.route('/<path:path>')
+def index(path):
+    return app.send_static_file(f'{path}')
+ 
     
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')

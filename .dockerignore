@@ -1,0 +1,5 @@
+.git
+__pycache__
+pdf-splitter-ui/build/
+pdf-splitter-api/cache/
+pdf-splitter-api/downloads/
