@@ -3,7 +3,7 @@ import { Box, AppBar, Container, Toolbar, Typography } from "@mui/material";
 import useResizeObserver from "use-resize-observer";
 import OptionsBox, { Options } from "./components/OptionsBox";
 import PdfPageViewer from "./components/PdfPageViewer";
-import PdfDownloader from "./components/PdfDownloader";
+import PdfPreviewer from "./components/PdfPreviewer";
 import { OutputSlice, Slice } from "./types";
 import { previewPdf, splitPdf } from "./api";
 
@@ -77,6 +77,7 @@ function calculateFilenames(
 }
 
 function App() {
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [pdfUrl, setPdfUrl] = React.useState<string>("");
   const [pages, setPages] = React.useState<string[]>([]);
   const [slices, setSlices] = React.useState<Slice[][]>([]);
@@ -110,6 +111,7 @@ function App() {
   };
 
   const handlePreviewPdf = (url: string) => {
+    setIsLoading(true);
     setPdfUrl(url);
     setDownloadUrl("");
     setSlices([]);
@@ -123,6 +125,7 @@ function App() {
         data.pages.map((d) => mergeSmallSlices(d.slices, options.threshold))
       );
       setDimension({ width: data.width, height: data.height });
+      setIsLoading(false);
     });
   };
 
@@ -163,7 +166,7 @@ function App() {
       <main>
         <Container maxWidth="lg">
           <Toolbar />
-          <PdfDownloader onDownload={handlePreviewPdf} />
+          <PdfPreviewer onPreview={handlePreviewPdf} isLoading={isLoading} />
 
           <Box
             mt={4}
@@ -194,7 +197,7 @@ function App() {
         <OptionsBox
           options={options}
           onChange={setOptions}
-          disabled={pages.length === 0}
+          disabled={pages.length === 0 || isLoading}
           onSplit={handleSplit}
           downloadUrl={downloadUrl}
         />

@@ -10,17 +10,18 @@ export type PdfResponse = {
 };
 
 type Props = {
-  onDownload?: (url: string) => void;
+  onPreview?: (url: string) => void;
+  isLoading?: boolean;
 };
 
-function PdfDownloader({ onDownload }: Props) {
+function PdfPreviewer({ onPreview, isLoading }: Props) {
   const [url, setUrl] = React.useState<string>("");
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
   };
 
-  const handleDownload = () => {
-    onDownload?.(url);
+  const handlePreview = () => {
+    onPreview?.(url);
   };
 
   return (
@@ -31,11 +32,11 @@ function PdfDownloader({ onDownload }: Props) {
         label="PDF URL"
         fullWidth
       />
-      <Button variant="contained" color="primary" onClick={handleDownload}>
-        Download
+      <Button variant="contained" color="primary" onClick={handlePreview} disabled={isLoading}>
+        {isLoading ? "Loading..." : "Preview"}
       </Button>
     </Stack>
   );
 }
 
-export default PdfDownloader;
+export default PdfPreviewer;
