@@ -1,7 +1,6 @@
 import React from "react";
 import { Slice } from "../types";
 import { Stack, TextField, Button } from "@mui/material";
-import { previewPdf } from "../api";
 
 export type PdfResponse = {
   width: number;
