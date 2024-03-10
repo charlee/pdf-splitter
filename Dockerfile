@@ -19,7 +19,7 @@ COPY --from=node_builder /app/build/*.json /app/build/*.ico /app/build/*.png /ap
 COPY --from=node_builder /app/build/static /app/static
 COPY --from=node_builder /app/build/index.html /app/templates
 
-RUN mkdir -p /app/{cache,downloads}
+RUN mkdir -p /app/cache /app/downloads
 
 RUN pip install -r requirements.txt
 
