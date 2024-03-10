@@ -2,7 +2,7 @@ import { API_BASE } from "./config";
 import { Slice, OutputSlice } from "./types";
 
 function post<T>(url: string, body: any): Promise<T> {
-  return fetch(`${API_BASE}/${url}`, {
+  return fetch(`${API_BASE}/api/${url}`, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
@@ -11,18 +11,18 @@ function post<T>(url: string, body: any): Promise<T> {
   }).then((res) => res.json() as T);
 }
 
-export type DownloadPdfResponse = {
+export type PreviewPdfResponse = {
   width: number;
   height: number;
   pages: Array<{ image: string; slices: Slice[] }>;
 };
 
-export function downloadPdf(url: string) {
-  return post<DownloadPdfResponse>("download", { url });
+export function previewPdf(url: string) {
+  return post<PreviewPdfResponse>("preview", { url });
 }
 
 export type SplitPdfResponse = {
-  output_url: string;
+  download_url: string;
 };
 
 export function splitPdf(

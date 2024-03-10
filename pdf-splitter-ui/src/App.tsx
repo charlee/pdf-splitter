@@ -3,9 +3,9 @@ import { Box, AppBar, Container, Toolbar, Typography } from "@mui/material";
 import useResizeObserver from "use-resize-observer";
 import OptionsBox, { Options } from "./components/OptionsBox";
 import PdfPageViewer from "./components/PdfPageViewer";
-import PdfDownloader, { PdfResponse } from "./components/PdfDownloader";
-import { Slice } from "./types";
-import { downloadPdf, splitPdf } from "./api";
+import PdfDownloader from "./components/PdfDownloader";
+import { OutputSlice, Slice } from "./types";
+import { previewPdf, splitPdf } from "./api";
 
 function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   const newSlices = [];
@@ -27,43 +27,62 @@ function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   return newSlices;
 }
 
-function calculateFilenamePositions(
-  slices: Slice[][],
-  path: string,
-  filename: string
-) {
-  const positions = [];
-  let n = 0;
+function calculateOutputSlices(slices: Slice[][]): OutputSlice[][] {
+  const outputSlices = [] as OutputSlice[][];
   for (let i = 0; i < slices.length; i++) {
-    const pagePositions = [];
+    const pageOutputSlices = [] as OutputSlice[];
     for (let j = 0; j < slices[i].length; j++) {
       if (!slices[i][j].is_empty) {
         // if previous slice is non-empty, merge the filename with the previous slice
         if (j > 0 && !slices[i][j - 1].is_empty) {
-          pagePositions[pagePositions.length - 1].height += slices[i][j].height;
+          pageOutputSlices[pageOutputSlices.length - 1].height +=
+            slices[i][j].height;
           continue;
         }
-
-        n += 1;
-        pagePositions.push({
+        
+        pageOutputSlices.push({
           top: slices[i].slice(0, j).reduce((acc, s) => acc + s.height, 0),
           height: slices[i][j].height,
-          filename: `${path}/${filename.replace("{{n}}", n.toString())}`,
         });
       }
     }
-    positions.push(pagePositions);
+    outputSlices.push(pageOutputSlices);
   }
 
-  return positions;
+  return outputSlices;
+}
+
+function calculateFilenames(
+  outputSlices: OutputSlice[][],
+  path: string,
+  filename: string
+): OutputSlice[][] {
+  let n = 0;
+  const newOutputSlices = [] as OutputSlice[][];
+
+  for (let i = 0; i < outputSlices.length; i++) {
+    newOutputSlices.push([]);
+    for (let j = 0; j < outputSlices[i].length; j++) {
+      if (!outputSlices[i][j].link) {
+        n += 1;
+      }
+      newOutputSlices[i].push({
+        ...outputSlices[i][j],
+        filename: `${path}/${filename.replace("{{n}}", n.toString())}`,
+      });
+    }
+  }
+
+  return newOutputSlices;
 }
 
 function App() {
   const [pdfUrl, setPdfUrl] = React.useState<string>("");
   const [pages, setPages] = React.useState<string[]>([]);
   const [slices, setSlices] = React.useState<Slice[][]>([]);
-  const [outputDownloadUrl, setOutputDownloadLink] = React.useState<string>("");
+  const [downloadUrl, setDownloadUrl] = React.useState<string>("");
   const [mergedSlices, setMergedSlices] = React.useState<Slice[][]>([]);
+  const [outputSlices, setOutputSlices] = React.useState<OutputSlice[][]>([]);
   const [dimension, setDimension] = React.useState<{
     width: number;
     height: number;
@@ -90,9 +109,14 @@ function App() {
     ]);
   };
 
-  const handleDownload = (url: string) => {
+  const handlePreviewPdf = (url: string) => {
     setPdfUrl(url);
-    downloadPdf(url).then((data) => {
+    setDownloadUrl("");
+    setSlices([]);
+    setMergedSlices([]);
+    setOutputSlices([]);
+    setDimension({ width: 0, height: 0 });
+    previewPdf(url).then((data) => {
       setPages(data.pages.map((d) => d.image));
       setSlices(data.pages.map((d) => d.slices));
       setMergedSlices(
@@ -103,24 +127,31 @@ function App() {
   };
 
   const handleSplit = () => {
-    const outputs = calculateFilenamePositions(
-      mergedSlices,
-      options.path,
-      options.filename
-    );
-
-    splitPdf(pdfUrl, outputs, options.paddingX, options.paddingY).then(
+    splitPdf(pdfUrl, outputSlices, options.paddingX, options.paddingY).then(
       (data) => {
-        setOutputDownloadLink(data.output_url);
+        setDownloadUrl(data.download_url);
       }
     );
   };
 
-  const filenamePositions = calculateFilenamePositions(
-    mergedSlices,
-    options.path,
-    options.filename
-  );
+  const handleLinkOutputSlice = (page: number) => (idx: number) => {
+    setOutputSlices((prev) => {
+      const newSlices = [...prev];
+      newSlices[page] = [...prev[page]];
+      newSlices[page][idx] = {
+        ...newSlices[page][idx],
+        link: !newSlices[page][idx].link,
+      };
+      return calculateFilenames(newSlices, options.path, options.filename);
+    });
+  };
+
+  React.useEffect(() => {
+    let outputSlices = calculateOutputSlices(mergedSlices);
+    outputSlices = calculateFilenames(outputSlices, options.path, options.filename);
+
+    setOutputSlices(outputSlices);
+  }, [options.path, options.filename, mergedSlices]);
 
   return (
     <Box>
@@ -132,7 +163,7 @@ function App() {
       <main>
         <Container maxWidth="lg">
           <Toolbar />
-          <PdfDownloader onDownload={handleDownload} />
+          <PdfDownloader onDownload={handlePreviewPdf} />
 
           <Box
             mt={4}
@@ -149,10 +180,11 @@ function App() {
                   </Typography>
                   <PdfPageViewer
                     image={p}
-                    slices={mergedSlices[i]}
+                    slices={mergedSlices[i] ?? []}
                     scale={width / dimension.width}
                     onSlicesChange={handleMergedSlicesChange(i)}
-                    filenames={filenamePositions[i]}
+                    filenames={outputSlices[i] ?? []}
+                    onLink={handleLinkOutputSlice(i)}
                   />
                 </React.Fragment>
               ))}
@@ -164,6 +196,7 @@ function App() {
           onChange={setOptions}
           disabled={pages.length === 0}
           onSplit={handleSplit}
+          downloadUrl={downloadUrl}
         />
       </main>
     </Box>

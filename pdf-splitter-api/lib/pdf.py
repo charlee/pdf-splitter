@@ -101,29 +101,42 @@ def image_to_png_bytes(image: PIL.Image) -> bytes:
     image.save(image_bytes, format='PNG')
     return image_bytes.getvalue()
 
-def extract_slices(pdf_content: bytes, outputs: list[list[OutputSlice]], paddingX: int, paddingY: int) -> list[ExtractedSlice]:
+def extract_slices(pdf_content: bytes, slices: list[list[OutputSlice]], paddingX: int, paddingY: int) -> list[ExtractedSlice]:
     '''Extract slices from PDF.'''
 
     # Convert PDF to images
-    images = convert_from_bytes(pdf_content)
+    pdf_images = convert_from_bytes(pdf_content)
     
     # extract images
-    slices = []
-    for i, page in enumerate(outputs):
+    extracted_images = []
+    for i, page in enumerate(slices):
         for slice in page:
-            sliced_image = images[i].crop((0, slice['top'], images[i].width, slice['top'] + slice['height']))
-            
-            slices.append({
-                'image': sliced_image,
+            extracted_image = pdf_images[i].crop((0, slice['top'], pdf_images[i].width, slice['top'] + slice['height']))
+            extracted_images.append({
+                'image': extracted_image,
                 'filename': slice['filename'],
+                'link': slice.get('link', False),
             })
+
+    # link linked images
+    i = 0
+    while i < len(extracted_images):
+        if extracted_images[i]['link'] and i > 0:
+            new_height = extracted_images[i-1]['image'].size[1] + extracted_images[i]['image'].size[1] + paddingY
+            new_image = PIL.Image.new('RGB', (extracted_images[i]['image'].size[0], new_height), (255, 255, 255))
+            new_image.paste(extracted_images[i-1]['image'], (0, 0))
+            new_image.paste(extracted_images[i]['image'], (0, extracted_images[i-1]['image'].size[1] + paddingY))
+            extracted_images[i-1]['image'] = new_image
+            del extracted_images[i]
+        else:
+            i += 1
             
     # crop paddings
-    bounding_rects = [find_bounding_rect(slice['image']) for slice in slices]
+    bounding_rects = [find_bounding_rect(extracted_image['image']) for extracted_image in extracted_images]
     min_left = min([rect[0] for rect in bounding_rects])
     max_right = max([rect[2] for rect in bounding_rects])
     
-    for i, slice in enumerate(slices):
+    for i, slice in enumerate(extracted_images):
         im = slice['image'].crop((min_left, bounding_rects[i][1], max_right, bounding_rects[i][3]))
         im2 = PIL.Image.new('RGB', (im.size[0] + paddingX * 2, im.size[1] + paddingY * 2), (255, 255, 255))
         im2.paste(im, (paddingX, paddingY))
@@ -134,7 +147,7 @@ def extract_slices(pdf_content: bytes, outputs: list[list[OutputSlice]], padding
         {
             'filename': slice['filename'],
             'image': image_to_png_bytes(slice['image']),
-        } for slice in slices
+        } for slice in extracted_images
     ]
         
     return result

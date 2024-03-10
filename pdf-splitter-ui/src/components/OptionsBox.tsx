@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
   TextField,
+  Link,
 } from "@mui/material";
 import { Add, Remove } from "@mui/icons-material";
 
@@ -23,9 +24,10 @@ type Props = {
   disabled?: boolean;
   onChange?: (options: Options) => void;
   onSplit?: () => void;
+  downloadUrl?: string;
 };
 
-function OptionsBox({ options, disabled, onChange, onSplit }: Props) {
+function OptionsBox({ options, disabled, onChange, onSplit, downloadUrl }: Props) {
   const theme = useTheme();
 
   const handleThresholdChange = (threshold: number) => {
@@ -138,6 +140,7 @@ function OptionsBox({ options, disabled, onChange, onSplit }: Props) {
         >
           Split
         </Button>
+        {downloadUrl && <Link href={downloadUrl}>Download</Link>}
       </Stack>
     </Box>
   );

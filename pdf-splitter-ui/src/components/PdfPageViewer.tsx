@@ -1,4 +1,4 @@
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { red } from "@mui/material/colors";
 import { Slice, OutputSlice } from "../types";
 import FilenameView from "./FilenameView";
@@ -11,7 +11,8 @@ type Props = {
   // The scale of the displayed page vs. the original page, used to calculate the height of the slices
   scale: number;
 
-  filenames: Array<OutputSlice>;
+  filenames?: Array<OutputSlice>;
+  onLink?: (idx: number) => void;
 };
 
 function PdfPageViewer({
@@ -20,6 +21,7 @@ function PdfPageViewer({
   scale,
   filenames,
   onSlicesChange,
+  onLink,
 }: Props) {
   const handleToggleSliceEmpty = (i: number) => {
     return () => {
@@ -36,9 +38,6 @@ function PdfPageViewer({
         alt={`Page the PDF`}
         width="100%"
       />
-      <Box sx={{ position: "absolute", top: 0, left: 0, width: "100%" }}>
-        <FilenameView scale={scale} filenames={filenames} />
-      </Box>
       <Box
         sx={{
           position: "absolute",
@@ -73,6 +72,11 @@ function PdfPageViewer({
           </Box>
         ))}
       </Box>
+      {filenames && (
+        <Box sx={{ position: "absolute", top: 0, left: "70%", width: "30%" }}>
+          <FilenameView scale={scale} filenames={filenames} onLink={onLink} />
+        </Box>
+      )}
     </Box>
   );
 }
