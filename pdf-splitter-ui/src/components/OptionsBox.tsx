@@ -5,11 +5,14 @@ import {
   Slider,
   Stack,
   Typography,
+  TextField,
 } from "@mui/material";
 import { Add, Remove } from "@mui/icons-material";
 
 export type Options = {
   threshold: number;
+  path: string;
+  filename: string;
 };
 
 type Props = {
@@ -24,6 +27,14 @@ function OptionsBox({ options, onChange }: Props) {
     onChange?.({ ...options, threshold });
   };
 
+  const handlePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.({ ...options, path: e.target.value });
+  };
+
+  const handleFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.({ ...options, filename: e.target.value });
+  };
+
   return (
     <Box
       sx={{
@@ -36,35 +47,56 @@ function OptionsBox({ options, onChange }: Props) {
         p: 2,
       }}
     >
-      <Typography variant="caption" sx={{ fontWeight: 600 }}>
-        Threshold
-      </Typography>
-      <Stack direction="row" sx={{ alignItems: "center" }}>
-        <IconButton
+      <Stack direction="column" spacing={2}>
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+            Threshold
+          </Typography>
+          <Stack direction="row" sx={{ alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={() =>
+                handleThresholdChange(
+                  options.threshold > 0
+                    ? options.threshold - 1
+                    : options.threshold
+                )
+              }
+            >
+              <Remove />
+            </IconButton>
+            <Slider
+              value={options.threshold}
+              onChange={(e, v) => handleThresholdChange(v as number)}
+              min={0}
+              max={100}
+              step={1}
+              valueLabelDisplay="on"
+              sx={{ flex: 1 }}
+            />
+            <IconButton
+              size="small"
+              onClick={() => handleThresholdChange(options.threshold + 1)}
+            >
+              <Add />
+            </IconButton>
+          </Stack>
+        </Box>
+
+        <TextField
+          value={options.path}
+          onChange={handlePathChange}
+          label="Path"
+          fullWidth
           size="small"
-          onClick={() =>
-            handleThresholdChange(
-              options.threshold > 0 ? options.threshold - 1 : options.threshold
-            )
-          }
-        >
-          <Remove />
-        </IconButton>
-        <Slider
-          value={options.threshold}
-          onChange={(e, v) => handleThresholdChange(v as number)}
-          min={0}
-          max={100}
-          step={1}
-          valueLabelDisplay="on"
-          sx={{ flex: 1 }}
         />
-        <IconButton
+        <TextField
+          value={options.filename}
+          onChange={handleFilenameChange}
+          label="Filename"
           size="small"
-          onClick={() => handleThresholdChange(options.threshold + 1)}
-        >
-          <Add />
-        </IconButton>
+          fullWidth
+        />
       </Stack>
     </Box>
   );

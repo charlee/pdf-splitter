@@ -6,7 +6,6 @@ import PdfPageViewer from "./components/PdfPageViewer";
 import PdfDownloader, { PdfResponse } from "./components/PdfDownloader";
 import { Slice } from "./types";
 
-
 function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   const newSlices = [];
   for (let i = 0; i < slices.length; i++) {
@@ -27,6 +26,38 @@ function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   return newSlices;
 }
 
+function calculateFilenamePositions(
+  slices: Slice[][],
+  path: string,
+  filename: string
+) {
+  const positions = [];
+  let n = 0;
+  for (let i = 0; i < slices.length; i++) {
+    const pagePositions = [];
+    for (let j = 0; j < slices[i].length; j++) {
+      if (!slices[i][j].is_empty) {
+      
+        // if previous slice is non-empty, merge the filename with the previous slice
+        if (j > 0 && !slices[i][j - 1].is_empty) {
+          pagePositions[pagePositions.length - 1].height += slices[i][j].height;
+          continue;
+        }
+        
+        n += 1;
+        pagePositions.push({
+          top: slices[i].slice(0, j).reduce((acc, s) => acc + s.height, 0),
+          height: slices[i][j].height,
+          filename: `${path}/${filename.replace("{{n}}", n.toString())}`,
+        });
+      }
+    }
+    positions.push(pagePositions);
+  }
+  
+  return positions;
+}
+
 function App() {
   const [pages, setPages] = React.useState<string[]>([]);
   const [slices, setSlices] = React.useState<Slice[][]>([]);
@@ -35,9 +66,13 @@ function App() {
     width: number;
     height: number;
   }>({ width: 0, height: 0 });
-  const [options, setOptions] = React.useState<Options>({ threshold: 50 });
+  const [options, setOptions] = React.useState<Options>({
+    threshold: 50,
+    path: "",
+    filename: "{{n}}.png",
+  });
 
-  const { ref, width = 1, height = 1 } = useResizeObserver<HTMLDivElement>();
+  const { ref, width = 1 } = useResizeObserver<HTMLDivElement>();
 
   React.useEffect(() => {
     setMergedSlices(slices.map((s) => mergeSmallSlices(s, options.threshold)));
@@ -59,6 +94,12 @@ function App() {
     );
     setDimension({ width: data.width, height: data.height });
   };
+
+  const filenamePositions = calculateFilenamePositions(
+    mergedSlices,
+    options.path,
+    options.filename
+  );
 
   return (
     <Box>
@@ -90,6 +131,7 @@ function App() {
                     slices={mergedSlices[i]}
                     scale={width / dimension.width}
                     onSlicesChange={handleMergedSlicesChange(i)}
+                    filenames={filenamePositions[i]}
                   />
                 </React.Fragment>
               ))}
