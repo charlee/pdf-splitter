@@ -36,6 +36,9 @@ def split_pdf(pdf_content, empty_space_height):
     images = images[1:]
 
     pages = []
+    
+    width = images[0].width
+    height = images[0].height
 
     # Split images into questions
     for image in images:
@@ -77,4 +80,8 @@ def split_pdf(pdf_content, empty_space_height):
             'slices': slices,
         })
 
-    return pages
+    return {
+        'width': width,
+        'height': height,
+        'pages': pages,
+    }

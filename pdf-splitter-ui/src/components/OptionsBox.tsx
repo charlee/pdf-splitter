@@ -33,20 +33,15 @@ function OptionsBox({ options, onChange }: Props) {
         width: 200,
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.shadows[2],
-        p: 4,
+        p: 2,
       }}
     >
-      <Typography variant="body1">Threshold</Typography>
-      <Slider
-        value={options.threshold}
-        onChange={(e, v) => handleThresholdChange(v as number)}
-        min={0}
-        max={100}
-        step={1}
-        valueLabelDisplay="on"
-      />
-      <Stack spacing={2} direction="row">
+      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+        Threshold
+      </Typography>
+      <Stack direction="row" sx={{ alignItems: "center" }}>
         <IconButton
+          size="small"
           onClick={() =>
             handleThresholdChange(
               options.threshold > 0 ? options.threshold - 1 : options.threshold
@@ -55,7 +50,17 @@ function OptionsBox({ options, onChange }: Props) {
         >
           <Remove />
         </IconButton>
+        <Slider
+          value={options.threshold}
+          onChange={(e, v) => handleThresholdChange(v as number)}
+          min={0}
+          max={100}
+          step={1}
+          valueLabelDisplay="on"
+          sx={{ flex: 1 }}
+        />
         <IconButton
+          size="small"
           onClick={() => handleThresholdChange(options.threshold + 1)}
         >
           <Add />
