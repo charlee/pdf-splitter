@@ -3,6 +3,10 @@ __pycache__
 .venv/
 cache/
 
+pdf-splitter-api/static
+pdf-splitter-api/public
+pdf-splitter-api/downloads
+
 
 # react
 node_modules/

@@ -57,10 +57,17 @@ def download_sliced_images(filename):
     return send_file(filepath, as_attachment=True)
 
 
-@app.route('/<path:path>')
-def index(path):
-    return app.send_static_file(f'{path}')
- 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/<path>')
+def static_files(path):
+    
+    # prevent directory traversal
+    path = path.replace('..', '').replace('//', '/').replace('\\', '')
+
+    return send_file(f'public/{path}')
     
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
