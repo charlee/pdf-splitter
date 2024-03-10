@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   useTheme,
   IconButton,
   Slider,
@@ -13,14 +14,18 @@ export type Options = {
   threshold: number;
   path: string;
   filename: string;
+  paddingX: number;
+  paddingY: number;
 };
 
 type Props = {
   options: Options;
+  disabled?: boolean;
   onChange?: (options: Options) => void;
+  onSplit?: () => void;
 };
 
-function OptionsBox({ options, onChange }: Props) {
+function OptionsBox({ options, disabled, onChange, onSplit }: Props) {
   const theme = useTheme();
 
   const handleThresholdChange = (threshold: number) => {
@@ -35,12 +40,20 @@ function OptionsBox({ options, onChange }: Props) {
     onChange?.({ ...options, filename: e.target.value });
   };
 
+  const handlePaddingXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.({ ...options, paddingX: Number(e.target.value) });
+  };
+
+  const handlePaddingYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.({ ...options, paddingY: Number(e.target.value) });
+  };
+
   return (
     <Box
       sx={{
         position: "fixed",
         right: 48,
-        top: "33vh",
+        top: "20vh",
         width: 200,
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.shadows[2],
@@ -73,6 +86,7 @@ function OptionsBox({ options, onChange }: Props) {
               step={1}
               valueLabelDisplay="on"
               sx={{ flex: 1 }}
+              disabled={disabled}
             />
             <IconButton
               size="small"
@@ -89,6 +103,7 @@ function OptionsBox({ options, onChange }: Props) {
           label="Path"
           fullWidth
           size="small"
+          disabled={disabled}
         />
         <TextField
           value={options.filename}
@@ -96,7 +111,33 @@ function OptionsBox({ options, onChange }: Props) {
           label="Filename"
           size="small"
           fullWidth
+          disabled={disabled}
         />
+        <TextField
+          value={String(options.paddingX)}
+          onChange={handlePaddingXChange}
+          label="Padding X"
+          size="small"
+          fullWidth
+          disabled={disabled}
+        />
+        <TextField
+          value={String(options.paddingY)}
+          onChange={handlePaddingYChange}
+          label="Padding X"
+          size="small"
+          fullWidth
+          disabled={disabled}
+        />
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onSplit}
+          disabled={disabled}
+        >
+          Split
+        </Button>
       </Stack>
     </Box>
   );

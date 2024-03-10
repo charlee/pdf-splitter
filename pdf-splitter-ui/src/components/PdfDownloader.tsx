@@ -1,7 +1,7 @@
 import React from "react";
 import { Slice } from "../types";
 import { Stack, TextField, Button } from "@mui/material";
-import { API_BASE } from "../config";
+import { downloadPdf } from "../api";
 
 export type PdfResponse = {
   width: number;
@@ -10,7 +10,7 @@ export type PdfResponse = {
 };
 
 type Props = {
-  onDownload?: (data: PdfResponse) => void;
+  onDownload?: (url: string) => void;
 };
 
 function PdfDownloader({ onDownload }: Props) {
@@ -20,15 +20,7 @@ function PdfDownloader({ onDownload }: Props) {
   };
 
   const handleDownload = () => {
-    fetch(`${API_BASE}/download`, {
-      method: "POST",
-      body: JSON.stringify({ url }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json() as Promise<PdfResponse>)
-      .then((data) => onDownload?.(data));
+    onDownload?.(url);
   };
 
   return (

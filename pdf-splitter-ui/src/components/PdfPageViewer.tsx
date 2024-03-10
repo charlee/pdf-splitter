@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import { red } from "@mui/material/colors";
-import { Slice } from "../types";
-import FilenameView, { FilenamePosition } from "./FilenameView";
+import { Slice, OutputSlice } from "../types";
+import FilenameView from "./FilenameView";
 
 type Props = {
   image: string;
@@ -11,7 +11,7 @@ type Props = {
   // The scale of the displayed page vs. the original page, used to calculate the height of the slices
   scale: number;
 
-  filenames: Array<FilenamePosition>;
+  filenames: Array<OutputSlice>;
 };
 
 function PdfPageViewer({

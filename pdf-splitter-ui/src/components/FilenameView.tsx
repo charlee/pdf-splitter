@@ -1,15 +1,10 @@
 import { Box } from "@mui/material";
 import { red } from "@mui/material/colors";
-
-export type FilenamePosition = {
-  top: number;
-  height: number;
-  filename: string;
-};
+import { OutputSlice } from "../types";
 
 type Props = {
   scale: number;
-  filenames: Array<FilenamePosition>;
+  filenames: Array<OutputSlice>;
 };
 
 function FilenameView({ scale, filenames }: Props) {

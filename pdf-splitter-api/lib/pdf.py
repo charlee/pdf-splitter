@@ -5,6 +5,8 @@ import requests
 from pdf2image import convert_from_bytes
 import numpy as np
 import base64
+import PIL
+from typing import TypedDict
 
 def download_pdf(url):
     
@@ -28,19 +30,18 @@ def download_pdf(url):
         return None
 
 
-def split_pdf(pdf_content, empty_space_height):
+def split_pdf(pdf_content):
+    '''Split PDF into small slices using white spaces.'''
+
     # Convert PDF to images
     images = convert_from_bytes(pdf_content)
-
-    # Skip the first page
-    images = images[1:]
 
     pages = []
     
     width = images[0].width
     height = images[0].height
 
-    # Split images into questions
+    # Split images into slices
     for image in images:
         # Convert image to RGB
         image = image.convert('RGB')
@@ -61,16 +62,6 @@ def split_pdf(pdf_content, empty_space_height):
             'is_empty': group[0].item(),
         } for group in white_groups]
         
-        # # connect small empty spaces
-        # i = 1
-        # while i < len(slices) - 1:
-        #     if slices[i]['is_empty'] and slices[i]['height'] < empty_space_height:
-        #         slices[i-1]['height'] += slices[i]['height'] + slices[i+1]['height']
-        #         del slices[i+1]
-        #         del slices[i]
-        #     else:
-        #         i += 1
-                
         # save image as png bytes
         image_bytes = io.BytesIO()
         image.save(image_bytes, format='PNG')
@@ -85,3 +76,66 @@ def split_pdf(pdf_content, empty_space_height):
         'height': height,
         'pages': pages,
     }
+    
+
+class OutputSlice(TypedDict):
+    top: int
+    height: int
+    filename: str
+    
+
+class ExtractedSlice(TypedDict):
+    image: bytes
+    filename: str
+
+
+def find_bounding_rect(image: PIL.Image) -> tuple[int, int, int, int]:
+    # Convert image to grayscale and then to numpy array for processing
+    image_gray = image.convert('L')
+    inverted_image = PIL.ImageOps.invert(image_gray)
+    return inverted_image.getbbox()
+    
+def image_to_png_bytes(image: PIL.Image) -> bytes:
+    '''Convert image to PNG bytes.'''
+    image_bytes = io.BytesIO()
+    image.save(image_bytes, format='PNG')
+    return image_bytes.getvalue()
+
+def extract_slices(pdf_content: bytes, outputs: list[list[OutputSlice]], paddingX: int, paddingY: int) -> list[ExtractedSlice]:
+    '''Extract slices from PDF.'''
+
+    # Convert PDF to images
+    images = convert_from_bytes(pdf_content)
+    
+    # extract images
+    slices = []
+    for i, page in enumerate(outputs):
+        for slice in page:
+            sliced_image = images[i].crop((0, slice['top'], images[i].width, slice['top'] + slice['height']))
+            
+            slices.append({
+                'image': sliced_image,
+                'filename': slice['filename'],
+            })
+            
+    # crop paddings
+    bounding_rects = [find_bounding_rect(slice['image']) for slice in slices]
+    min_left = min([rect[0] for rect in bounding_rects])
+    max_right = max([rect[2] for rect in bounding_rects])
+    
+    for i, slice in enumerate(slices):
+        im = slice['image'].crop((min_left, bounding_rects[i][1], max_right, bounding_rects[i][3]))
+        im2 = PIL.Image.new('RGB', (im.size[0] + paddingX * 2, im.size[1] + paddingY * 2), (255, 255, 255))
+        im2.paste(im, (paddingX, paddingY))
+        slice['image'] = im2
+        
+    # save image as png bytes
+    result = [
+        {
+            'filename': slice['filename'],
+            'image': image_to_png_bytes(slice['image']),
+        } for slice in slices
+    ]
+        
+    return result
+
