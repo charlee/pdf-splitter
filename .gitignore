@@ -1,0 +1,8 @@
+# python
+__pycache__
+.venv/
+cache/
+
+
+# react
+node_modules/

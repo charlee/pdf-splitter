@@ -1,0 +1,106 @@
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <style>
+    #pdf {
+      background: #ccc;
+    }
+
+    .page {
+      position: relative;
+      margin-bottom: 20px;
+      margin-top: 20px;
+    } 
+    
+    .page img {
+    }
+    
+    .page .slice {
+      position: absolute;
+      left: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <form>
+    <input type="text" id="url" name="url" placeholder="Enter PDF url">
+    <input type="text" id="threshold" name="threshold" placeholder="Enter threshold" value="50">
+    <button type="submit">GET</button>
+  </form>
+  
+  <div id="pdf">
+  </div>
+
+  <script>
+    function mergeSmallSlices(slices, threshold) {
+      const newSlices = [];
+      for (var i = 0; i < slices.length; i++) {
+        if (i === 0) {
+          newSlices.push({ ...slices[i] });
+          continue;
+        }
+        
+        if (slices[i].is_empty && slices[i].height < threshold) {
+          newSlices[newSlices.length - 1].height += slices[i].height + slices[i+1].height;
+          i = i + 1;
+          continue;
+        }
+        
+        newSlices.push({ ...slices[i] });
+      }
+      return newSlices;
+    }
+    
+    let pagesData;
+    
+    function renderPages() {
+      for (var i = 0; i < pagesData.length; i++) {
+        const page = $('<div />').addClass('page');
+        const img = $('<img />', {
+          src: 'data:image/png;base64,' + pagesData[i].image,
+        });
+        
+        page.append(img);
+        
+        let start = 0;
+        
+        const slices = mergeSmallSlices(pagesData[i].slices, $('#threshold').val());
+        
+        for (var j = 0; j < slices.length; j++) {
+          const slice = $('<div />').addClass('slice').css({
+            top: start,
+            height: slices[j].height,
+            background: slices[j].is_empty ? 'rgba(0, 0, 0, 0.2)' : 'transparent',
+          });
+          page.append(slice);
+          start += slices[j].height;
+        }
+
+        $('#pdf').append(page);
+      }
+    }
+
+    $('form').submit(function(e) {
+      e.preventDefault();
+      var url = $('#url').val();
+      $.ajax({
+        url: '/api/download',
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify({ url: url }),
+      }).then((data) => {
+        pagesData = data;
+        renderPages();
+      });
+    });
+    
+    $('#threshold').change(function() {
+      $('#pdf').empty();
+      renderPages();
+    });
+  </script>
+</body>
+</html>
