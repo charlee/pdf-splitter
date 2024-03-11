@@ -6,6 +6,7 @@ import PdfPageViewer from "./components/PdfPageViewer";
 import PdfPreviewer from "./components/PdfPreviewer";
 import { OutputSlice, Slice } from "./types";
 import { previewPdf, splitPdf } from "./api";
+import ExportBox from "./components/ExportBox";
 
 function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   const newSlices = [];
@@ -80,24 +81,21 @@ function calculateFilenames(
   outputSlices: OutputSlice[][],
   path: string,
   filename: string
-): OutputSlice[][] {
+): string[][] {
   let n = 0;
-  const newOutputSlices = [] as OutputSlice[][];
+  const filenames = [] as string[][];
 
   for (let i = 0; i < outputSlices.length; i++) {
-    newOutputSlices.push([]);
+    filenames.push([]);
     for (let j = 0; j < outputSlices[i].length; j++) {
       if (!outputSlices[i][j].link) {
         n += 1;
       }
-      newOutputSlices[i].push({
-        ...outputSlices[i][j],
-        filename: `${path}/${filename.replace("{{n}}", n.toString())}`,
-      });
+      filenames[i].push(`${path}/${filename.replace("{{n}}", n.toString())}`);
     }
   }
 
-  return newOutputSlices;
+  return filenames;
 }
 
 function App() {
@@ -114,13 +112,16 @@ function App() {
   }>({ width: 0, height: 0 });
   const [options, setOptions] = React.useState<Options>({
     threshold: 50,
+    skipFirstNPages: 1,
+    skipFirstNSlices: 3,
+    skipLastNSlices: 1,
+  });
+
+  const [exportOptions, setExportOptions] = React.useState({
     path: "splitted",
     filename: "{{n}}.png",
     paddingX: 16,
     paddingY: 16,
-    skipFirstNPages: 1,
-    skipFirstNSlices: 3,
-    skipLastNSlices: 1,
   });
 
   const { ref, width = 1 } = useResizeObserver<HTMLDivElement>();
@@ -134,7 +135,13 @@ function App() {
         options.skipLastNSlices
       )
     );
-  }, [options.threshold]);
+  }, [
+    options.threshold,
+    options.skipFirstNPages,
+    options.skipFirstNSlices,
+    options.skipLastNSlices,
+    slices,
+  ]);
 
   const handleMergedSlicesChange = (i: number) => (newSlices: Slice[]) => {
     setMergedSlices((prev) => [
@@ -170,13 +177,18 @@ function App() {
 
   const handleSplit = () => {
     setDownloadUrl("");
-    const pdfFilename = options.path.replace(/\/\\:\./, "_") || "splitted";
+    const pdfFilename =
+      exportOptions.path.replace(/\/\\:\./, "_") || "splitted";
+      
+      
+    const filenames = calculateFilenames(outputSlices, exportOptions.path, exportOptions.filename);
+    
     splitPdf(
       pdfUrl,
       pdfFilename,
-      outputSlices,
-      options.paddingX,
-      options.paddingY
+      outputSlices.map((s, i) => s.map((o, j) => ({ ...o, filename: filenames[i][j] }))),
+      exportOptions.paddingX,
+      exportOptions.paddingY
     ).then((data) => {
       setDownloadUrl(data.download_url);
     });
@@ -190,20 +202,17 @@ function App() {
         ...newSlices[page][idx],
         link: !newSlices[page][idx].link,
       };
-      return calculateFilenames(newSlices, options.path, options.filename);
+      return newSlices;
     });
   };
 
   React.useEffect(() => {
     let outputSlices = calculateOutputSlices(mergedSlices);
-    outputSlices = calculateFilenames(
-      outputSlices,
-      options.path,
-      options.filename
-    );
 
     setOutputSlices(outputSlices);
-  }, [options.path, options.filename, mergedSlices]);
+  }, [mergedSlices]);
+
+  const filenames = calculateFilenames(outputSlices, exportOptions.path, exportOptions.filename);
 
   return (
     <Box>
@@ -235,7 +244,8 @@ function App() {
                     slices={mergedSlices[i] ?? []}
                     scale={width / dimension.width}
                     onSlicesChange={handleMergedSlicesChange(i)}
-                    filenames={outputSlices[i] ?? []}
+                    outputSlices={outputSlices[i] ?? []}
+                    filenames={filenames[i] ?? []}
                     onLink={handleLinkOutputSlice(i)}
                   />
                 </React.Fragment>
@@ -243,13 +253,20 @@ function App() {
             </Box>
           </Box>
         </Container>
-        <OptionsBox
-          options={options}
-          onChange={setOptions}
-          disabled={pages.length === 0 || isLoading}
-          onSplit={handleSplit}
-          downloadUrl={downloadUrl}
-        />
+        <Box sx={{ position: "fixed", right: 48, top: "20vh", width: 200 }}>
+          <OptionsBox
+            options={options}
+            onChange={setOptions}
+            disabled={pages.length === 0 || isLoading}
+          />
+          <ExportBox
+            options={exportOptions}
+            onChange={setExportOptions}
+            disabled={pages.length === 0 || isLoading}
+            onSplit={handleSplit}
+            downloadUrl={downloadUrl}
+          />
+        </Box>
       </main>
     </Box>
   );

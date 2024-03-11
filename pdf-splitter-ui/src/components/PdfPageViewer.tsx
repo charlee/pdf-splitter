@@ -11,7 +11,8 @@ type Props = {
   // The scale of the displayed page vs. the original page, used to calculate the height of the slices
   scale: number;
 
-  filenames?: Array<OutputSlice>;
+  outputSlices?: Array<OutputSlice>;
+  filenames?: Array<string>;
   onLink?: (idx: number) => void;
 };
 
@@ -19,6 +20,7 @@ function PdfPageViewer({
   image,
   slices,
   scale,
+  outputSlices,
   filenames,
   onSlicesChange,
   onLink,
@@ -74,7 +76,12 @@ function PdfPageViewer({
       </Box>
       {filenames && (
         <Box sx={{ position: "absolute", top: 0, left: "70%", width: "30%" }}>
-          <FilenameView scale={scale} filenames={filenames} onLink={onLink} />
+          <FilenameView
+            scale={scale}
+            outputSlices={outputSlices ?? []}
+            filenames={filenames ?? []}
+            onLink={onLink}
+          />
         </Box>
       )}
     </Box>

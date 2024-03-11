@@ -8,11 +8,12 @@ import React from "react";
 
 type Props = {
   scale: number;
-  filenames: Array<OutputSlice>;
+  outputSlices: Array<OutputSlice>;
+  filenames: Array<string>;
   onLink?: (idx: number) => void;
 };
 
-function FilenameView({ scale, filenames, onLink }: Props) {
+function FilenameView({ scale, outputSlices, filenames, onLink }: Props) {
 
   // link a slice with previous
   const handleLinkClick = (idx: number) => (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -22,15 +23,15 @@ function FilenameView({ scale, filenames, onLink }: Props) {
 
   return (
     <Box sx={{ position: "relative" }}>
-      {filenames.map((filename, idx) => (
+      {outputSlices.map((s, idx) => (
       <Box
           key={idx}
           sx={{
             boxSizing: "border-box",
             pr: 1,
             position: "absolute",
-            top: filename.top * scale,
-            height: filename.height * scale,
+            top: s.top * scale,
+            height: s.height * scale,
             left: 0,
             width: "100%",
             display: "flex",
@@ -46,10 +47,10 @@ function FilenameView({ scale, filenames, onLink }: Props) {
             fontWeight: 600,
           }}
         >
-          {filename.filename}
+          {filenames[idx]}
         </Box>
         <IconButton size="small" onClick={handleLinkClick(idx)} >
-          {filename.link ? <LinkIcon sx={{ color: red[600] }} /> : <LinkOffIcon sx={{ color: grey[400] }}/>}
+          {s.link ? <LinkIcon sx={{ color: red[600] }} /> : <LinkOffIcon sx={{ color: grey[400] }}/>}
         </IconButton>
         </Box>
       ))}
