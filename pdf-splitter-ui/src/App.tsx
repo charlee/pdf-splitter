@@ -39,7 +39,7 @@ function calculateOutputSlices(slices: Slice[][]): OutputSlice[][] {
             slices[i][j].height;
           continue;
         }
-        
+
         pageOutputSlices.push({
           top: slices[i].slice(0, j).reduce((acc, s) => acc + s.height, 0),
           height: slices[i][j].height,
@@ -130,11 +130,17 @@ function App() {
   };
 
   const handleSplit = () => {
-    splitPdf(pdfUrl, outputSlices, options.paddingX, options.paddingY).then(
-      (data) => {
-        setDownloadUrl(data.download_url);
-      }
-    );
+    setDownloadUrl("");
+    const pdfFilename = options.path.replace(/\/\\:\./, "_") || "splitted";
+    splitPdf(
+      pdfUrl,
+      pdfFilename,
+      outputSlices,
+      options.paddingX,
+      options.paddingY
+    ).then((data) => {
+      setDownloadUrl(data.download_url);
+    });
   };
 
   const handleLinkOutputSlice = (page: number) => (idx: number) => {
@@ -151,7 +157,11 @@ function App() {
 
   React.useEffect(() => {
     let outputSlices = calculateOutputSlices(mergedSlices);
-    outputSlices = calculateFilenames(outputSlices, options.path, options.filename);
+    outputSlices = calculateFilenames(
+      outputSlices,
+      options.path,
+      options.filename
+    );
 
     setOutputSlices(outputSlices);
   }, [options.path, options.filename, mergedSlices]);

@@ -27,9 +27,10 @@ export type SplitPdfResponse = {
 
 export function splitPdf(
   url: string,
+  pdf_filename: string,
   outputs: OutputSlice[][],
   paddingX: number,
   paddingY: number
 ) {
-  return post<SplitPdfResponse>("split", { url, outputs, paddingX, paddingY });
+  return post<SplitPdfResponse>("split", { url, outputs, paddingX, paddingY, pdf_filename });
 }

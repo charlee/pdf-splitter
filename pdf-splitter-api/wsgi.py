@@ -27,11 +27,15 @@ def preview_pdf():
 def split():
     url = request.json.get('url')
     slices = request.json.get('outputs')
+    pdf_filename = request.json.get('pdf_filename')
     paddingX = request.json.get('paddingX')
     paddingY = request.json.get('paddingY')
     
-    date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    download_filename = f'download.{date}.zip'
+    date = datetime.now().strftime("%Y%m%d%H%M%S")
+    
+    # clean the pdf_filename
+    pdf_filename = re.sub(r'\W', '_', pdf_filename)
+    download_filename = f'{pdf_filename}.{date}.zip'
     
     pdf_content = download_pdf(url)
     
