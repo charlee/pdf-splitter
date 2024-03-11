@@ -27,6 +27,30 @@ function mergeSmallSlices(slices: Array<Slice>, threshold: number) {
   return newSlices;
 }
 
+function batchSkipOrKeepSlices(
+  slices: Slice[][],
+  skipFirstNPages: number,
+  skipFirstNSlices: number,
+  skipLastNSlices: number
+) {
+  const newSlices = [] as Slice[][];
+
+  for (let i = 0; i < slices.length; i++) {
+    newSlices.push([]);
+    for (let j = 0; j < slices[i].length; j++) {
+      newSlices[i].push({
+        ...slices[i][j],
+        is_empty:
+          i < skipFirstNPages ||
+          j < skipFirstNSlices ||
+          j >= slices[i].length - skipLastNSlices,
+      });
+    }
+  }
+
+  return newSlices;
+}
+
 function calculateOutputSlices(slices: Slice[][]): OutputSlice[][] {
   const outputSlices = [] as OutputSlice[][];
   for (let i = 0; i < slices.length; i++) {
@@ -94,12 +118,22 @@ function App() {
     filename: "{{n}}.png",
     paddingX: 16,
     paddingY: 16,
+    skipFirstNPages: 1,
+    skipFirstNSlices: 3,
+    skipLastNSlices: 1,
   });
 
   const { ref, width = 1 } = useResizeObserver<HTMLDivElement>();
 
   React.useEffect(() => {
-    setMergedSlices(slices.map((s) => mergeSmallSlices(s, options.threshold)));
+    setMergedSlices(
+      batchSkipOrKeepSlices(
+        slices.map((s) => mergeSmallSlices(s, options.threshold)),
+        options.skipFirstNPages,
+        options.skipFirstNSlices,
+        options.skipLastNSlices
+      )
+    );
   }, [options.threshold]);
 
   const handleMergedSlicesChange = (i: number) => (newSlices: Slice[]) => {
@@ -122,7 +156,12 @@ function App() {
       setPages(data.pages.map((d) => d.image));
       setSlices(data.pages.map((d) => d.slices));
       setMergedSlices(
-        data.pages.map((d) => mergeSmallSlices(d.slices, options.threshold))
+        batchSkipOrKeepSlices(
+          data.pages.map((d) => mergeSmallSlices(d.slices, options.threshold)),
+          options.skipFirstNPages,
+          options.skipFirstNSlices,
+          options.skipLastNSlices
+        )
       );
       setDimension({ width: data.width, height: data.height });
       setIsLoading(false);

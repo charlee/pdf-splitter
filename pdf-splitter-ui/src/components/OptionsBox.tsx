@@ -17,6 +17,9 @@ export type Options = {
   filename: string;
   paddingX: number;
   paddingY: number;
+  skipFirstNPages: number;
+  skipFirstNSlices: number;
+  skipLastNSlices: number;
 };
 
 type Props = {
@@ -49,6 +52,10 @@ function OptionsBox({ options, disabled, onChange, onSplit, downloadUrl }: Props
   const handlePaddingYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange?.({ ...options, paddingY: Number(e.target.value) });
   };
+  
+  const handleNumberChange = (name: keyof Options) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange?.({ ...options, [name]: Number(e.target.value) });
+  }
 
   return (
     <Box
@@ -98,6 +105,33 @@ function OptionsBox({ options, disabled, onChange, onSplit, downloadUrl }: Props
             </IconButton>
           </Stack>
         </Box>
+
+        <TextField
+          value={String(options.skipFirstNPages)}
+          onChange={handleNumberChange("skipFirstNPages")}
+          label="Skip first N pages"
+          fullWidth
+          size="small"
+          disabled={disabled}
+        />
+
+        <TextField
+          value={String(options.skipFirstNSlices)}
+          onChange={handleNumberChange("skipFirstNSlices")}
+          label="Skip first N slices"
+          fullWidth
+          size="small"
+          disabled={disabled}
+        />
+
+        <TextField
+          value={String(options.skipLastNSlices)}
+          onChange={handleNumberChange("skipLastNSlices")}
+          label="Skip last N slices"
+          fullWidth
+          size="small"
+          disabled={disabled}
+        />
 
         <TextField
           value={options.path}
